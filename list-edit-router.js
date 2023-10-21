@@ -1,16 +1,23 @@
 const express = require('express');
 const listEditRouter = express.Router();
 
+// Middleware para manejar errores en solicitudes POST y PUT
+const validateRequestData = (req, res, next) => {
+    if (req.method === 'POST' || req.method === 'PUT') {
+        if (!req.body || (req.method === 'POST' && !req.body.description)) {
+            return res.status(400).send('Solicitud no válida');
+        }
+    }
+    next();
+};
+
 // Ruta para crear una tarea (POST)
-listEditRouter.post('/create', (req, res) => {
-    // Aquí deberías implementar la lógica para crear una nueva tarea
-    // Puedes acceder a los datos enviados en el cuerpo de la solicitud a través de req.body
-    // y luego agregar la nueva tarea al array 'task'.
-    // Por ejemplo:
+listEditRouter.post('/create', validateRequestData, (req, res) => {
+    // Implementa la lógica para crear una nueva tarea
     const newTask = {
         id: '789012',
         isCompleted: false,
-        description: req.body.description // Debes enviar la descripción en el cuerpo de la solicitud.
+        description: req.body.description
     };
     task.push(newTask);
     res.json(newTask);
@@ -29,9 +36,9 @@ listEditRouter.delete('/:taskId', (req, res) => {
 });
 
 // Ruta para actualizar una tarea (PUT o PATCH)
-listEditRouter.put('/:taskId', (req, res) => {
+listEditRouter.put('/:taskId', validateRequestData, (req, res) => {
     const taskId = req.params.taskId;
-    const updatedTask = req.body; // Debes enviar los datos actualizados en el cuerpo de la solicitud.
+    const updatedTask = req.body;
     const index = task.findIndex(t => t.id === taskId);
     if (index !== -1) {
         task[index] = updatedTask;
