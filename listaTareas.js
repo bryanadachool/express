@@ -2,40 +2,77 @@ const express = require('express');
 const app = express();
 const port = 3000;
 
-const task = [{
-    id: '123456',
-    isCompleted: false,
-    description: "Walk the dog",
-}];
-
-// Importa los routers
-const listViewRouter = require('./list-view-router');
-const listEditRouter = require('./list-edit-router');
-
-// Middleware para gestionar solicitudes HTTP válidas
-const validateHTTPMethods = (req, res, next) => {
-    if (req.method !== 'GET' && req.method !== 'POST' && req.method !== 'PUT' && req.method !== 'DELETE') {
-        return res.status(400).send('Método HTTP no válido');
-    }
-    next();
-};
+// Lista de tareas
+const tasks = [
+    { id: 1, description: "Buy groceries", isCompleted: false },
+    { id: 2, description: "Finish homework", isCompleted: false },
+    { id: 3, description: "Walk the dog", isCompleted: true },
+];
 
 app.use(express.json());
 
-// Implementa los middleware de aplicación
-app.use(validateHTTPMethods);
+// Obtener todas las tareas
+app.get('/tasks', (req, res) => {
+    res.json(tasks);
+});
 
-// Implementa los routers en rutas específicas
-app.use('/list-view', listViewRouter);
-app.use('/list-edit', listEditRouter);
+// Crear una nueva tarea
+app.post('/tasks', (req, res) => {
+    const newTask = {
+        id: tasks.length + 1,
+        description: req.body.description,
+        isCompleted: false,
+    };
+    tasks.push(newTask);
+    res.status(201).json(newTask);
+});
 
-// Middleware para gestionar parámetros incorrectos
-app.use((err, req, res, next) => {
-    if (err) {
-        res.status(400).send('Parámetros incorrectos');
+// Obtener una tarea por su ID
+app.get('/tasks/:id', (req, res) => {
+    const taskId = parseInt(req.params.id);
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+        res.json(task);
     } else {
-        next();
+        res.status(404).json({ error: 'Tarea no encontrada' });
     }
+});
+
+// Actualizar una tarea por su ID
+app.put('/tasks/:id', (req, res) => {
+    const taskId = parseInt(req.params.id);
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
+        task.description = req.body.description || task.description;
+        task.isCompleted = req.body.isCompleted || task.isCompleted;
+        res.json(task);
+    } else {
+        res.status(404).json({ error: 'Tarea no encontrada' });
+    }
+});
+
+// Eliminar una tarea por su ID
+app.delete('/tasks/:id', (req, res) => {
+    const taskId = parseInt(req.params.id);
+    const taskIndex = tasks.findIndex(t => t.id === taskId);
+    if (taskIndex !== -1) {
+        tasks.splice(taskIndex, 1);
+        res.json({ message: 'Tarea eliminada con éxito' });
+    } else {
+        res.status(404).json({ error: 'Tarea no encontrada' });
+    }
+});
+
+// Obtener tareas completas
+app.get('/tasks/completed', (req, res) => {
+    const completedTasks = tasks.filter(t => t.isCompleted);
+    res.json(completedTasks);
+});
+
+// Obtener tareas incompletas
+app.get('/tasks/incomplete', (req, res) => {
+    const incompleteTasks = tasks.filter(t => !t.isCompleted);
+    res.json(incompleteTasks);
 });
 
 app.listen(port, () => {
